@@ -1,4 +1,4 @@
 .git
-./post-comment-frontend/node_modules
-./post-comment-backend/.mvn
-./post-comment-backend/.settings
+frontend/node_modules/
+./post-comment-backend/.mvn/
+./post-comment-backend/.settings/

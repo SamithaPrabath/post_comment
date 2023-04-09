@@ -1,0 +1,59 @@
+package com.postcomment.backend.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.stereotype.Service;
+
+import com.postcomment.backend.entity.Comment;
+import com.postcomment.backend.repo.CommentRepo;
+
+@Service
+public class CommentService {
+	@Autowired
+	private CommentRepo commentRepo;
+	
+	private final MongoTemplate mongoTemplate;
+
+    public CommentService(MongoTemplate mongoTemplate) {
+        this.mongoTemplate = mongoTemplate;
+    }
+
+	public List<Comment> getComments() {
+		return commentRepo.findAll();
+	}
+	
+	
+	public String addComment(Comment comment) {
+		commentRepo.save(comment);
+		return comment.getId();
+	}
+	
+    public List<Comment> getComments(int postId) {
+        return commentRepo.findByPostID(postId);
+    }
+    
+    public String updateComment(Comment comment) {
+    	 Query query = new Query();
+         query.addCriteria(Criteria.where("commentId").is(comment.getId()));
+         Update update = new Update();
+         update.set("message", comment.getMessage());
+         update.set("time", comment.getTime());
+         mongoTemplate.updateFirst(query, update, Comment.class);
+    	
+    	return comment.getId();
+    }
+    
+    public String deleteComment(Comment comment) {
+    	Query query = new Query();
+        query.addCriteria(Criteria.where("id").is(comment.getId()));
+        mongoTemplate.remove(query, Comment.class);
+        
+        return comment.getId();
+    }
+	
+}

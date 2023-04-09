@@ -1,4 +1,1 @@
-.git
-frontend/node_modules/
-./post-comment-backend/.mvn/
-./post-comment-backend/.settings/
+post-comment-frontend/node_modules/

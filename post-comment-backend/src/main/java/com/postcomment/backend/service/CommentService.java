@@ -39,7 +39,7 @@ public class CommentService {
     
     public String updateComment(Comment comment) {
     	 Query query = new Query();
-         query.addCriteria(Criteria.where("commentId").is(comment.getId()));
+         query.addCriteria(Criteria.where("id").is(comment.getId()));
          Update update = new Update();
          update.set("message", comment.getMessage());
          update.set("time", comment.getTime());
@@ -48,12 +48,12 @@ public class CommentService {
     	return comment.getId();
     }
     
-    public String deleteComment(Comment comment) {
+    public String deleteComment(String id) {
     	Query query = new Query();
-        query.addCriteria(Criteria.where("id").is(comment.getId()));
+        query.addCriteria(Criteria.where("id").is(id));
         mongoTemplate.remove(query, Comment.class);
         
-        return comment.getId();
+        return "deleted comment";
     }
 	
 }

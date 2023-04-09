@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import moment from "moment/moment";
+import axios from "axios";
 
 //images
 import PostCover from "../assets/post-cover.jpg";
@@ -11,19 +12,40 @@ import Edit from "../assets/edit.png";
 import Delete from "../assets/delete.png";
 
 function Post() {
-  const localStorage = window.localStorage;
-  const [allComments, setAllComments] = useState(localStorage.getItem("comments") ? [...JSON.parse(localStorage.getItem("comments"))] : []);
+  const [allComments, setAllComments] = useState([]);
   const [addComment, setAddComment] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [updateComment, setUpdateComment] = useState(false);
-  const [updateTime, setUpdateTime] = useState(0);
   const [updateCommentVal, setUpdateCommentVal] = useState("");
   const [updatedComment, setUpdatedComment] = useState("");
+  const [updateId, setUpdateId] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
+  const [postId, setPostId] = useState(1);
+  const [userName, setUserName] = useState("Samitha");
 
   const onPostClick = () => {
+    const data = {
+      user_name: userName,
+      message: newComment,
+      time: Date.now(),
+      postID:postId
+    };
+
     if (newComment) {
-      setAllComments((prev) => [{ name: "Venura Warnasooriya", comment: newComment, time: Date.now() }, ...prev]);
       setAddComment(false);
+
+      axios
+        .post("http://localhost:8080/addComment", data, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        })
+        .then((res) => {
+          console.log(res);
+        })
+        .catch((err) => {
+          console.log(err);
+        });
     }
   };
 
@@ -32,25 +54,47 @@ function Post() {
     setNewComment("");
   };
 
-  const onDeleteClick = (time) => {
-    setAllComments([...allComments.filter((comment) => comment.time !== time)]);
+  const onDeleteClick = (id) => {
+    axios.delete(`http://localhost:8080/deleteComment/${id}`)
+    .then(response => {
+      console.log(response);
+    })
+    .catch(error => {
+      console.error(error);
+    });
   };
 
-  const onUpdateClick = (comment) => {
-    const specificComment = allComments.filter((comments) => comments.time === updateTime);
-
-    specificComment.map((prevComment) => {
-      prevComment.comment = updatedComment;
-      prevComment.time = Date.now();
-    });
-
-    setAllComments([...allComments.filter((comment) => comment.time !== updateTime)]);
-    setUpdateComment(false);
+  const onUpdateClick = () => {
+    axios
+      .put("http://localhost:8080/editComment", {
+        id: updateId,
+        user_name: userName,
+        message: updatedComment,
+        time: Date.now(),
+        postID:postId
+      })
+      .then((res) => {
+        setUpdateComment(false);
+        setAllComments([]);
+        console.log(res);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   };
 
   useEffect(() => {
-    localStorage.setItem("comments", JSON.stringify(allComments));
+    // localStorage.setItem("comments", JSON.stringify(allComments));
+    axios
+      .get(`http://localhost:8080/getComments/${postId}`)
+      .then((res) => {
+        setAllComments([...res.data]);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
   }, [allComments]);
+
 
   return (
     <Container>
@@ -88,28 +132,38 @@ function Post() {
                     <div className="name-container">
                       <div className="profile-image"></div>
                       <div className="profile-name">
-                        <div className="name">{comment.name}</div>
-                        <div className="time">{moment(comment.time).fromNow()}</div>
+                        <div className="name">{comment.user_name}</div>
+                        <div className="time">{moment(parseInt(comment.time)).fromNow()}</div>
                       </div>
                     </div>
-                    <div className="comment">{comment.comment}</div>
-                    <div className="popup-update">
-                      <div
-                        className="edit"
-                        onClick={() => {
-                          setUpdateComment(true);
-                          setUpdateTime(comment.time);
-                          setUpdateCommentVal(comment.comment);
-                        }}
-                      >
-                        <img src={Edit} alt="edit-btn" />
-                        Edit
+                    <div className="comment">{comment.message}</div>
+                    {userName==comment.user_name ? (
+                      <div className="popup-update">
+                        <div
+                          className="edit"
+                          onClick={() => {
+                            setUpdateComment(true);
+                            setUpdateCommentVal(comment.message);
+                            setUpdateId(comment.id);
+                          }}
+                        >
+                          <img src={Edit} alt="edit-btn" />
+                          Edit
+                        </div>
+                        <div
+                          className="delete"
+                          onClick={() => {
+                            onDeleteClick(comment.id);
+                            setDeleteId(comment.id);
+                          }}
+                        >
+                          <img src={Delete} alt="delete-btn" />
+                          Delete
+                        </div>
                       </div>
-                      <div className="delete" onClick={() => onDeleteClick(comment.time)}>
-                        <img src={Delete} alt="delete-btn" />
-                        Delete
-                      </div>
-                    </div>
+                    ):
+                    <></>
+                    }
                   </div>
                 ))}
               </ShowComments>
@@ -316,7 +370,6 @@ const ShowComments = styled.div`
     margin-bottom: 10px;
     padding-bottom: 10px;
     border-bottom: 1px solid #cbdad5;
-    border-opacity: 0.8;
     position: relative;
     overflow: hidden;
 
